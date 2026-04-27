@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Sparkles, Plus, Loader2, CheckCircle2 } from 'lucide-react';
 
@@ -9,7 +11,7 @@ const PREDEFINED_IDEAS = [
     format: "Challenge / Vlog",
     target_audience: "General / Self-Improvement",
     tags: ["challenge", "30days", "lifestyle", "productivity"],
-    estimated_engagement: "high"
+    estimated_engagement: "high",
   },
   {
     title: "How to Achieve [Goal] in 2024 (Step-by-Step)",
@@ -18,7 +20,7 @@ const PREDEFINED_IDEAS = [
     format: "Educational / Tutorial",
     target_audience: "Beginners",
     tags: ["guide", "tutorial", "howto", "2024"],
-    estimated_engagement: "medium"
+    estimated_engagement: "medium",
   },
   {
     title: "Why Everyone is Wrong About [Trending Topic]",
@@ -27,8 +29,8 @@ const PREDEFINED_IDEAS = [
     format: "Commentary / Analysis",
     target_audience: "Intermediate / Advanced",
     tags: ["analysis", "opinion", "trend", "truth"],
-    estimated_engagement: "high"
-  }
+    estimated_engagement: "high",
+  },
 ];
 
 export function PredefinedIdeas({ onSave }: { onSave: (idea: any) => Promise<void> }) {
@@ -39,13 +41,17 @@ export function PredefinedIdeas({ onSave }: { onSave: (idea: any) => Promise<voi
     setSavingIdx(idx);
     try {
       await onSave(idea);
-      setSavedIdxs(prev => [...prev, idx]);
+      setSavedIdxs((prev) => [...prev, idx]);
     } catch (e) {
       console.error(e);
     } finally {
       setSavingIdx(null);
     }
   };
+
+  const getBtnClass = (idx: number) =>
+    (savedIdxs.includes(idx) ? 'btn-secondary' : 'btn-primary') +
+    ' w-full flex items-center justify-center gap-2 py-2 text-sm';
 
   return (
     <div className="space-y-4 mt-8">
@@ -54,12 +60,15 @@ export function PredefinedIdeas({ onSave }: { onSave: (idea: any) => Promise<voi
         <h2 className="text-xl font-bold text-white">Predefined Templates</h2>
       </div>
       <p className="text-gray-400 text-sm mb-6">
-        Don't know where to start? Browse these proven video frameworks and save them to your account.
+        Don&apos;t know where to start? Browse these proven video frameworks and save them to your account.
       </p>
 
       <div className="grid md:grid-cols-3 gap-4">
         {PREDEFINED_IDEAS.map((idea, idx) => (
-          <div key={idx} className="card p-5 bg-dark-800 border-dark-700 hover:border-brand-500/30 transition-colors flex flex-col justify-between">
+          <div
+            key={idx}
+            className="card p-5 bg-dark-800 border-dark-700 hover:border-brand-500/30 transition-colors flex flex-col justify-between"
+          >
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-2 py-1 text-xs rounded-full bg-brand-500/10 text-brand-400 font-medium">
@@ -72,11 +81,11 @@ export function PredefinedIdeas({ onSave }: { onSave: (idea: any) => Promise<voi
               <h3 className="font-bold text-white mb-2">{idea.title}</h3>
               <p className="text-sm text-gray-400 line-clamp-3 mb-4">{idea.description}</p>
             </div>
-            
+
             <button
               onClick={() => handleSave(idea, idx)}
               disabled={savingIdx === idx || savedIdxs.includes(idx)}
-              className={\`btn-\${savedIdxs.includes(idx) ? 'secondary' : 'primary'} w-full flex items-center justify-center gap-2 py-2 text-sm\`}
+              className={getBtnClass(idx)}
             >
               {savingIdx === idx ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
