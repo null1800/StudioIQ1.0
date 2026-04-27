@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aiService } from '@/lib/ai';
 import { tokenService } from '@/lib/tokens';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/server';
 import { authService } from '@/lib/auth';
 import { ChannelAnalysis, ContentIdea, Script, Thumbnail, StudioMode } from '@/types';
 import { checkRateLimit } from '@/lib/redis';
@@ -40,6 +40,9 @@ export async function POST(request: NextRequest) {
       case 'generate-setup':
         return await generateSetup(user.id, user.tier, ideaId, preferences);
 
+      case 'save-idea':
+        return await savePredefinedIdea(user.id, body.idea, analysisId);
+
       default:
         return NextResponse.json(
           { success: false, error: 'Invalid action' },
@@ -75,6 +78,7 @@ async function generateContentIdeas(
   }
 
   // Get analysis
+  const supabase = await createClient();
   const { data: analysis, error } = await supabase
     .from('channel_analyses')
     .select('*')
@@ -175,6 +179,7 @@ async function generateScript(
   }
 
   // Get idea
+  const supabase = await createClient();
   const { data: idea, error } = await supabase
     .from('content_ideas')
     .select('*')
@@ -265,6 +270,7 @@ async function generateThumbnail(
   }
 
   // Get idea
+  const supabase = await createClient();
   const { data: idea, error } = await supabase
     .from('content_ideas')
     .select('*')
@@ -361,6 +367,7 @@ async function generateSetup(
   }
 
   // Get idea
+  const supabase = await createClient();
   const { data: idea, error } = await supabase
     .from('content_ideas')
     .select('*')
@@ -431,4 +438,44 @@ async function generateSetup(
     await tokenService.refundTokens(userId, 'studio_simulation', 'Generation failed');
     throw error;
   }
+}
+
+async function savePredefinedIdea(userId: string, idea: any, analysisId: string | undefined) {
+  if (!idea) {
+    return NextResponse.json(
+      { success: false, error: 'Idea object is required' },
+      { status: 400 }
+    );
+  }
+
+  const supabase = await createClient();
+  const { data: saved, error: saveError } = await supabase
+    .from('content_ideas')
+    .insert({
+      user_id: userId,
+      channel_analysis_id: analysisId || null,
+      title: idea.title,
+      hook: idea.hook,
+      description: idea.description,
+      target_audience: idea.target_audience,
+      estimated_engagement: idea.estimated_engagement,
+      format: idea.format,
+      tags: idea.tags,
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (saveError) {
+    console.error('Save template error:', saveError);
+    return NextResponse.json(
+      { success: false, error: 'Failed to save template' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: saved,
+  });
 }

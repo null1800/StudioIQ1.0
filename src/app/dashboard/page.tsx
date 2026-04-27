@@ -40,6 +40,7 @@ interface Analysis {
 
 export default function DashboardPage() {
   const [channelUrl, setChannelUrl] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboard-stats'],
@@ -81,9 +82,31 @@ export default function DashboardPage() {
 
   const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault();
-    if (channelUrl.trim()) {
-      analyzeMutation.mutate(channelUrl);
+    setValidationError(null);
+    
+    const input = channelUrl.trim();
+    if (!input) {
+      setValidationError("Please enter a YouTube channel URL or handle.");
+      return;
     }
+    
+    if (input.startsWith('http')) {
+      try {
+        const url = new URL(input);
+        if (!url.hostname.includes('youtube.com') && !url.hostname.includes('youtu.be')) {
+          setValidationError("Please enter a valid YouTube URL (must contain youtube.com).");
+          return;
+        }
+      } catch {
+        setValidationError("Please enter a valid URL.");
+        return;
+      }
+    } else if (input.includes(' ')) {
+      setValidationError("Handles and IDs cannot contain spaces. Use @handle or a valid URL.");
+      return;
+    }
+
+    analyzeMutation.mutate(input);
   };
 
   return (
@@ -139,11 +162,11 @@ export default function DashboardPage() {
           </button>
         </form>
 
-        {analyzeMutation.isError && (
+        {(validationError || analyzeMutation.isError) && (
           <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-400" />
             <p className="text-red-400">
-              {analyzeMutation.error instanceof Error ? analyzeMutation.error.message : 'Analysis failed'}
+              {validationError || (analyzeMutation.error instanceof Error ? analyzeMutation.error.message : 'Analysis failed')}
             </p>
           </div>
         )}

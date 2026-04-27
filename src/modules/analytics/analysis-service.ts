@@ -10,6 +10,8 @@ import {
 import { ChannelAnalysis, YouTubeChannel } from '@/types';
 import { cacheGet, cacheSet } from '@/lib/redis';
 
+import { aiService } from '@/lib/ai';
+
 // --------------------------------------------------------------------------
 // getChannelDetails
 // Returns a full YouTubeChannel object for DB persistence.
@@ -52,7 +54,7 @@ export async function getChannelDetails(identifier: string): Promise<YouTubeChan
 
 // --------------------------------------------------------------------------
 // analyzeChannel
-// Full orchestration: resolve → fetch → transform → compute metrics.
+// Full orchestration: resolve → fetch → transform → compute metrics → AI insights.
 // --------------------------------------------------------------------------
 export async function analyzeChannel(
   userId: string,
@@ -85,18 +87,37 @@ export async function analyzeChannel(
   const rawVideos = await fetchChannelVideos(channelId, 50);
   const videos = rawVideos.map(transformVideo);
 
+  // Call the AI Service to analyze the profile!
+  let aiProfile = {
+    niche: 'Unknown',
+    content_style: 'Unknown',
+    top_performing_topics: [],
+    growth_signals: [],
+    best_upload_times: []
+  };
+
+  try {
+    aiProfile = await aiService.analyzeChannelProfile(
+      channel.title,
+      channelData.snippet?.description || null,
+      videos
+    );
+  } catch (error) {
+    console.warn('AI Profile Analysis failed, using defaults:', error);
+  }
+
   const result: ChannelAnalysis = {
     id: crypto.randomUUID(),
     user_id: userId,
     channel_id: channelId,
-    niche: null,
-    content_style: null,
+    niche: aiProfile.niche,
+    content_style: aiProfile.content_style,
     upload_frequency: calculateUploadFrequency(videos),
     avg_views_per_video: calculateAverageViews(videos),
     engagement_rate: calculateEngagement(videos),
-    growth_signals: [],
-    top_performing_topics: [],
-    best_upload_times: [],
+    growth_signals: aiProfile.growth_signals,
+    top_performing_topics: aiProfile.top_performing_topics,
+    best_upload_times: aiProfile.best_upload_times,
     analysis_data: {
       total_videos_analyzed: videos.length,
       channel_stats: {

@@ -437,6 +437,56 @@ export class AIService {
     }));
   }
 
+  async analyzeChannelProfile(
+    channelTitle: string,
+    channelDescription: string | null,
+    videos: YouTubeVideo[]
+  ): Promise<{
+    niche: string;
+    content_style: string;
+    top_performing_topics: string[];
+    growth_signals: string[];
+    best_upload_times: string[];
+  }> {
+    const videoData = videos.slice(0, 15).map(v => ({
+      title: v.title,
+      views: v.view_count,
+      published: v.published_at,
+    }));
+
+    const prompt = `
+      Analyze this YouTube channel profile and recent videos to determine its core identity.
+      
+      Channel Title: ${channelTitle}
+      Description: ${channelDescription || 'None provided'}
+      Recent Videos: ${JSON.stringify(videoData, null, 2)}
+      
+      Determine:
+      1. The primary niche (e.g., Tech Reviews, Gaming, Cooking, Finance)
+      2. Content style (e.g., Educational, Entertaining, Documentary, Vlog)
+      3. Top 3 performing topics based on view counts
+      4. 2-3 Growth signals (what they are doing right)
+      5. 1-2 Best upload times based on their publishing patterns (e.g., "Weekends morning", "Wednesdays 5PM")
+      
+      Return ONLY JSON:
+      {
+        "niche": "string",
+        "content_style": "string",
+        "top_performing_topics": ["string"],
+        "growth_signals": ["string"],
+        "best_upload_times": ["string"]
+      }
+    `;
+
+    return this.generateWithRetry(prompt, z.object({
+      niche: z.string(),
+      content_style: z.string(),
+      top_performing_topics: z.array(z.string()),
+      growth_signals: z.array(z.string()),
+      best_upload_times: z.array(z.string())
+    }), 'claude-3-haiku-20240307');
+  }
+
   async analyzeVideoPerformance(
     videos: YouTubeVideo[]
   ): Promise<{

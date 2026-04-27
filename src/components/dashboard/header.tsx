@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Coins, Bell, Menu, X, Sparkles } from 'lucide-react';
+import { UserButton } from "@clerk/nextjs";
 import { cn, formatNumber } from '@/lib/utils';
 
 interface TokenData {
@@ -67,10 +68,12 @@ export function Header() {
               <span className="absolute top-1 right-1 w-2 h-2 bg-brand-500 rounded-full" />
             </button>
 
-            {/* User Avatar */}
-            <div className="w-8 h-8 bg-brand-500/20 rounded-full flex items-center justify-center">
-              <span className="text-brand-400 font-semibold text-sm">U</span>
-            </div>
+            {/* User Avatar & Profile Management */}
+            <UserButton afterSignOutUrl="/" appearance={{
+              elements: {
+                userButtonAvatarBox: "w-8 h-8",
+              }
+            }} />
           </div>
         </div>
       </header>

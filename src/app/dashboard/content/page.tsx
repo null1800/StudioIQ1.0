@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { IdeaFeed } from '@/components/ai/IdeaFeed';
+import { PredefinedIdeas } from '@/components/ai/PredefinedIdeas';
 import { supabase } from '@/lib/supabase';
 
 export default function ContentPage() {
@@ -52,6 +53,28 @@ export default function ContentPage() {
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || 'Failed to generate ideas');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      refetchIdeas();
+    }
+  });
+
+  const savePredefinedMutation = useMutation({
+    mutationFn: async (idea: any) => {
+      const res = await fetch('/api/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'save-idea',
+          idea,
+          analysisId: selectedAnalysisId || undefined
+        }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to save template');
       }
       return res.json();
     },
@@ -145,6 +168,17 @@ export default function ContentPage() {
           )}
         </div>
       )}
+
+      {savePredefinedMutation.isError && (
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400" />
+          <p className="text-red-400">
+            {savePredefinedMutation.error instanceof Error ? savePredefinedMutation.error.message : 'Save failed'}
+          </p>
+        </div>
+      )}
+
+      <PredefinedIdeas onSave={async (idea) => await savePredefinedMutation.mutateAsync(idea)} />
     </div>
   );
 }
