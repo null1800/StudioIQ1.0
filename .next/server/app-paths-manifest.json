@@ -1,0 +1,9 @@
+{
+  "/api/tokens/route": "app/api/tokens/route.js",
+  "/dashboard/analytics/page": "app/dashboard/analytics/page.js",
+  "/dashboard/content/page": "app/dashboard/content/page.js",
+  "/dashboard/scripts/page": "app/dashboard/scripts/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/tokens/page": "app/dashboard/tokens/page.js",
+  "/dashboard/studio/page": "app/dashboard/studio/page.js"
+}
